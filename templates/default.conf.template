@@ -1,0 +1,43 @@
+server {
+  listen 80 default_server;
+  server_name _;
+  root ${WEBROOT};
+  default_type  application/octet-stream;
+  include mime.types;
+  client_max_body_size 0; # Manage this in php.ini (upload_max_filesize & post_max_size)
+  index index.php;
+
+  location / {
+    try_files $uri /index.php?$query_string;
+  }
+
+  location ~* \.(?:jpg|jpeg|gif|png|ico|cur|gz|svg|svgz|mp4|ogg|ogv|webm|htc|woff|woff2|ttf|otf|eot)$ {
+      sendfile on;
+      try_files $uri =404;
+  }
+
+  location ~* \.(?:css|js)$ {
+      sendfile on;
+      try_files $uri =404;
+  }
+
+  location ^~ /assets/ {
+    sendfile on;
+    try_files $uri =404;
+  }
+
+  location /index.php {
+    fastcgi_send_timeout 300;
+    fastcgi_read_timeout 300;
+
+    fastcgi_buffer_size 32k;
+    fastcgi_busy_buffers_size 64k;
+    fastcgi_buffers 4 32k;
+    fastcgi_keep_conn on;
+
+    include        fastcgi_params;
+    fastcgi_pass   php:9000;
+    fastcgi_index  index.php;
+    fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+  }
+}
