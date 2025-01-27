@@ -1,6 +1,11 @@
 volumes:
   db-data:
     driver: local
+  # Mounts the project folder to '/workspace'. The target path inside the container
+  # should match what your application expects. In this case, the compose file is
+  # in a sub-folder, so you will mount '..'. You would then reference this path as the
+  # 'workspaceFolder' in '.devcontainer/devcontainer.json' so VS Code starts here.
+  
 
 services:
   db:
@@ -21,10 +26,6 @@ services:
         GROUP_ID: ${WWW_GROUP_ID:-1000}
     extra_hosts:
       - "host.docker.internal:host-gateway"
-    volumes:
-      - type: bind
-        source: ../
-        target: /var/www/html
     depends_on:
       - db
     environment:
@@ -63,9 +64,6 @@ services:
     extra_hosts:
       - "host.docker.internal:host-gateway"
     volumes:
-      - type: bind
-        source: ./
-        target: /var/www/html
       - type: bind
         source: ./templates
         target: /etc/nginx/templates
