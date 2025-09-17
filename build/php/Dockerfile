@@ -1,9 +1,13 @@
 FROM php:8.2-fpm
 
-# Remove and re-create www-data users and map to local system ID
 ARG USER_ID
 ARG GROUP_ID
+ARG NODE_VERSION
 
+# set env
+ENV BASH_ENV /home/www-data/.bash_env
+
+# Remove and re-create www-data users and map to local system ID
 RUN if [ ${USER_ID:-0} -ne 0 ] && [ ${GROUP_ID:-0} -ne 0 ]; then \
     userdel -f www-data &&\
     if getent group www-data ; then groupdel www-data; fi &&\
@@ -50,6 +54,8 @@ RUN apt-get update && apt-get install -y \
 		libtidy-dev \
 		libxslt-dev \
 		libzip-dev \
+		python3-pip \
+		python3-full \
 	--no-install-recommends && \
 	apt-get autoremove -y && \
 curl -sS https://getcomposer.org/installer | php && mv composer.phar /usr/local/bin/composer && \
@@ -84,5 +90,20 @@ RUN pecl install imagick && docker-php-ext-enable imagick
 RUN pecl install  xdebug-3.2.1 && docker-php-ext-enable xdebug
 COPY xdebug.ini /usr/local/etc/php/conf.d/xdebug.ini
 
-# Purge apt cache
-RUN apt-get clean && apt-get purge
+USER www-data
+
+# Use bash for the shell
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
+
+# Install Node via nvm
+RUN curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.3/install.sh | bash
+
+COPY bashrc /home/www-data/.bashrc
+
+# Install node
+RUN source /home/www-data/.bashrc && nvm install ${NODE_VERSION}
+
+# Install yarn and corepack
+RUN source /home/www-data/.bashrc && npm install -g corepack
+RUN source /home/www-data/.bashrc && corepack enable
+RUN source /home/www-data/.bashrc && corepack install -g yarn@stable
